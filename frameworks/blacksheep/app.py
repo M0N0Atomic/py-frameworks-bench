@@ -1,23 +1,19 @@
 import time
 from uuid import uuid4
 
-from blacksheep import Application
+from blacksheep import Application, Request
 from blacksheep.server.responses import html, json, bad_request, text, unauthorized
 
-
 app = Application()
-
 
 # first add ten more routes to load routing system
 # ------------------------------------------------
 def req_ok(request):
     return html('ok')
 
-
 for n in range(5):
     app.route(f"/route-{n}")(req_ok)
     app.route(f"/route-dyn-{n}/<part>")(req_ok)
-
 
 # then prepare endpoints for the benchmark
 # ----------------------------------------
@@ -28,7 +24,6 @@ async def view_html(request):
     response.add_header(b'x-time', f"{time.time()}".encode())
     return response
 
-
 @app.route('/upload', methods=['POST'])
 async def view_upload(request):
     """Load multipart data and store it as a file."""
@@ -37,10 +32,10 @@ async def view_upload(request):
         return bad_request()
 
     with open(f"/tmp/{uuid4().hex}", 'w') as target:
-        target.write(formdata['file'])
+        data = formdata['file']
+        target.write(data[0].data.decode('utf'))
 
     return text(target.name)
-
 
 @app.route('/api/users/{int:user}/records/{int:record}', methods=['PUT'])
 async def view_api(request):
